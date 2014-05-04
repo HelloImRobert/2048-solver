@@ -16,12 +16,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     gamedata.cpp \
     aidata.cpp \
-    scorenode.cpp
+    scorenode.cpp \
+    node.cpp
 
 HEADERS  += mainwindow.h \
         gamedata.h \
     aidata.h \
-    scorenode.h
+    scorenode.h \
+    node.h
 
 FORMS    += mainwindow.ui
 

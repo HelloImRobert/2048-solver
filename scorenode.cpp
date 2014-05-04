@@ -17,18 +17,18 @@ void ScoreNode::get_scores(Node &inputnode)
         }
     }
 
-    /*
-    this->child_id = inputnode.child_id;
-    this->deathchance = inputnode.deathchance;
-    this->lvl = inputnode.lvl;
-    this->parent_id = inputnode.parent_id;
-    this->resolve_direction = inputnode.resolve_direction;
-    */
+
+    //    this->child_id = inputnode.child_id;
+    //    this->deathchance = inputnode.deathchance;
+    //    this->lvl = inputnode.lvl;
+    //    this->parent_id = inputnode.parent_id;
+    //    this->resolve_direction = inputnode.resolve_direction;
+
 
 
     //init all helper values
-    ScoreNode::calc_free_slots(inputnode);
-    ScoreNode::calc_highest_slot(inputnode);
+    ScoreNode::calc_free_slots();
+    ScoreNode::calc_king_slot();
 
 
 
@@ -39,50 +39,55 @@ void ScoreNode::get_scores(Node &inputnode)
 }
 
 // MAIN SCORE CALC
-void calc_scr_free_slots(Node &inputnode)
+void ScoreNode::calc_scr_free_slots()
 {
     double exponent;
     int needed_free;
 
 
-    needed_free = 16 - highest_slot; //# of slots to keep free (dependent on the highest number). any number below that will get an increasingly strong penalty on the score
+    needed_free = 16 - king_slot; //# of slots to keep free (dependent on the highest number). any number below that will get an increasingly strong penalty on the score
 
     if (needed_free < 1)
     {
-        ScoreNode::scr_free_slots = 0.001; // prevent a score of zero
+        this->scr_free_slots = 0.001; // prevent a score of zero
     }
     else
     {
-    exponent = (-1) * (free_slots / needed_free); // calculate score
-    ScoreNode::scr_free_slots = pow((1 - pow(20, exponent)), 2);
+        exponent = (-1) * (free_slots / needed_free); // calculate score
+        this->scr_free_slots = pow((1 - pow(20, exponent)), 2);
     }
 
 }
 
 
 //MAIN SCORE CALC
-void calc_scr_chain_slots(Node &inputnode)
+void ScoreNode::calc_scr_chain_slots()
 {
+    double king_slot_scr = 1.0;
+    double scr_chain = 1.0;
+    bool endOfChain = false;
 
-    double king_slot_scr;
+    int i = king_slot_pos_i;
+    int j = king_slot_pos_j;
 
     // postion of king slot
     //check row
     if (king_slot_pos_i == 3)
         king_slot_scr = 1.0;
     else
-        king_slot_scr = 0.01; //never ever leave the bottom row (if you can't be sure to get back)
+        king_slot_scr = 0.01/(3.0 - king_slot_pos_i); //never ever leave the bottom row (if you can't be sure to get back)
 
     //check colum
-   king_slot_scr = king_slot_scr * (1.0 /(king_slot_pos_j + 1.0));
+    // cloum score = 1/(1+ dist-to-ideal-pos)
+    king_slot_scr = king_slot_scr * (1.0 /(king_slot_pos_j + 1.0));
 
-// TODO:: continue here....
 
+    scr_chain_slots = king_slot_scr * scr_chain;
 }
 
 // HELPER
 // calc amount of free(= 0) slots
-void calc_free_slots(Node &inputnode)
+void ScoreNode::calc_free_slots()
 {
     free_slots = 0;
 
@@ -90,7 +95,7 @@ void calc_free_slots(Node &inputnode)
     {
         for(int j = 0 ; j < 4 ; j++)
         {
-            if(inputnode.fieldarr[i][j] == 0)
+            if(fieldarr[i][j] == 0)
                 free_slots++;
         }
     }
@@ -99,7 +104,7 @@ void calc_free_slots(Node &inputnode)
 
 // HELPER
 // calc value and position of slot with highest value in the game
-void calc_king_slot(Node &inputnode)
+void ScoreNode::calc_king_slot()
 {
     king_slot = 0;
     king_slot_pos_i = 0;
@@ -109,9 +114,9 @@ void calc_king_slot(Node &inputnode)
     {
         for(int j = 3 ; j >= 0 ; j--)
         {
-            if(inputnode.fieldarr[i][j] >= king_slot) //the lowest left most slot with the highest value is king
+            if(fieldarr[i][j] >= king_slot) //the lowest left most slot with the highest value is king
             {
-                king_slot = inputnode.fieldarr[i][j];
+                king_slot = fieldarr[i][j];
                 king_slot_pos_i = i;
                 king_slot_pos_j = j;
             }
@@ -133,14 +138,17 @@ void ScoreNode::calc_score_1(Node &inputnode) // second version score heuristic 
         }
     }
 
-    return returnval;
+    inputnode.score_1 = returnval;
 }
 
 void ScoreNode::calc_score_2(Node &inputnode)//score heuristic of scoretype 2: # monotony of the gamefield * small steps between beighbors
 {
     double score1;
+    double score2;
 
-    score1 = 1.0 - pow(1.3, scr_free_slots(inputnode));
+    score1 = scr_free_slots;
 
-    return returnval;
+    score2 = scr_chain_slots;
+
+    inputnode.score_2 = score1 * score2;
 }

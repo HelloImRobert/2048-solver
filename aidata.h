@@ -10,6 +10,7 @@
 #include <QVector>
 
 #include <scorenode.h>
+#include <node.h>
 
 
 #define STACKSIZE 10
@@ -35,7 +36,7 @@ typedef struct
     Scores_struct left_four;
 }Scorefieldvalues_struct;
 
-
+/*
 // Node container class with init
 class Node
 {
@@ -48,15 +49,16 @@ public:
 
     double score_1;
     double score_2;
-    /*
-    double deathchance;
-    int lvl;
-    int resolve_direction;
-    int parent_id;
-    int child_id;
-    */
+
+//    double deathchance;
+//    int lvl;
+//    int resolve_direction;
+//    int parent_id;
+//    int child_id;
+
 };
 
+*/
 
 // Scorefield container class
 class Scorefield
@@ -79,6 +81,8 @@ public:
 private:
 
     Node Solverstack[5000];
+
+    ScoreNode ScoreCalc;//create scoring object
 
     int stack_read;
 

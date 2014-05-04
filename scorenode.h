@@ -1,7 +1,8 @@
 #ifndef SCORENODE_H
 #define SCORENODE_H
 
-#include <aidata.h>
+#include <node.h>
+#include <math.h>
 
 class ScoreNode
 {
@@ -15,11 +16,11 @@ private:
     void calc_score_1(Node &inputnode);
     void calc_score_2(Node &inputnode);
 
-    void calc_scr_free_slots(Node &inputnode);
-    void calc_scr_chain_slots(Node &inputnode);
+    void calc_scr_free_slots();
+    void calc_scr_chain_slots();
 
-    void calc_free_slots(Node &inputnode);
-    void calc_king_slot(Node &inputnode);
+    void calc_free_slots();
+    void calc_king_slot();
 
     int free_slots;
     int king_slot;
@@ -28,6 +29,8 @@ private:
 
     double scr_free_slots;
     double scr_chain_slots;
+
+    int fieldarr[4][4];
 
 };
 

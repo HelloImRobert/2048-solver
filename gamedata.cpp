@@ -29,16 +29,16 @@ void gamedata::reset_game() //set game field values and score to 0, make two fie
     this->fielddrop(1);//make sure max one 4 is being dropped
     this->fielddrop();
 
-    // DEBUG
-    this->fielddrop(3);
-    this->fielddrop(1);
-    this->fielddrop(4);
-    this->fielddrop(4);
-    this->fielddrop(3);
-    this->fielddrop();
-    this->fielddrop();
-    this->fielddrop();
-    this->fielddrop();
+//    // DEBUG
+//    this->fielddrop(3);
+//    this->fielddrop(1);
+//    this->fielddrop(4);
+//    this->fielddrop(4);
+//    this->fielddrop(3);
+//    this->fielddrop();
+//    this->fielddrop();
+//    this->fielddrop();
+//    this->fielddrop();
 }
 
 int gamedata::get_score() // returns current score

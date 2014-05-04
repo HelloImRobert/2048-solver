@@ -1,5 +1,6 @@
 #include "aidata.h"
 
+/*
 Node::Node() //init empty Node
 {
     this->fieldarr.resize(4);
@@ -8,13 +9,12 @@ Node::Node() //init empty Node
     this->fieldarr[2].resize(4);
     this->fieldarr[3].resize(4);
 
-    /*
-    this->child_id = 0;
-    this->deathchance = 0.0;
-    this->lvl = 0;
-    this->parent_id = 0;
-    this->resolve_direction = 0;
-    */
+
+//    this->child_id = 0;
+//    this->deathchance = 0.0;
+//    this->lvl = 0;
+//    this->parent_id = 0;
+
 
     this->score_1 = 0;
     this->score_2 = 0;
@@ -42,18 +42,19 @@ void Node::copy_node(Node &inputnode)
         }
     }
 
-    /*
-    this->child_id = inputnode.child_id;
-    this->deathchance = inputnode.deathchance;
-    this->lvl = inputnode.lvl;
-    this->parent_id = inputnode.parent_id;
-    this->resolve_direction = inputnode.resolve_direction;
-    */
+
+//    this->child_id = inputnode.child_id;
+//    this->deathchance = inputnode.deathchance;
+//    this->lvl = inputnode.lvl;
+//    this->parent_id = inputnode.parent_id;
+//    this->resolve_direction = inputnode.resolve_direction;
 
     this->score_1 = inputnode.score_1;
     this->score_2 = inputnode.score_2;
 
 }
+
+*/
 
 Scorefield::Scorefield(Node &inputnode)
 {
@@ -633,249 +634,249 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
     return scores;
 }
 
-Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive score checker
-{
-    /*Scores_struct scores;
-    scores.score_1 = 0.0;
-    scores.score_2 = 0;
-    scores.deathchance = 0.0;
+//Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive score checker
+//{
+//    /*Scores_struct scores;
+//    scores.score_1 = 0.0;
+//    scores.score_2 = 0;
+//    scores.deathchance = 0.0;
 
-    Node passing_node(inputnode);
+//    Node passing_node(inputnode);
 
-    // TODO:: check for gameover
-    // TODO:: aggregate scores
-    // TODO:: how to choose on endgame?
+//    // TODO:: check for gameover
+//    // TODO:: aggregate scores
+//    // TODO:: how to choose on endgame?
 
-    if(depth > 0)// further recursion needed?
-    {
-        Scorefield my_scorefield(inputnode);//init scorefield with inputnode
-        Scores_struct scores_temp, worst_scores_up, worst_scores_down, worst_scores_left, worst_scores_right;
-        bool gameover = true;
+//    if(depth > 0)// further recursion needed?
+//    {
+//        Scorefield my_scorefield(inputnode);//init scorefield with inputnode
+//        Scores_struct scores_temp, worst_scores_up, worst_scores_down, worst_scores_left, worst_scores_right;
+//        bool gameover = true;
 
-        worst_scores_down.score_1 = 1.0; //init with the best possible values
-        worst_scores_down.score_2 = 16;
-        worst_scores_down.deathchance = 0.0;
+//        worst_scores_down.score_1 = 1.0; //init with the best possible values
+//        worst_scores_down.score_2 = 16;
+//        worst_scores_down.deathchance = 0.0;
 
-        worst_scores_up.score_1 = 1.0;
-        worst_scores_up.score_2 = 16;
-        worst_scores_up.deathchance = 0.0;
+//        worst_scores_up.score_1 = 1.0;
+//        worst_scores_up.score_2 = 16;
+//        worst_scores_up.deathchance = 0.0;
 
-        worst_scores_left.score_1 = 1.0;
-        worst_scores_left.score_2 = 16;
-        worst_scores_left.deathchance = 0.0;
+//        worst_scores_left.score_1 = 1.0;
+//        worst_scores_left.score_2 = 16;
+//        worst_scores_left.deathchance = 0.0;
 
-        worst_scores_right.score_1 = 1.0;
-        worst_scores_right.score_2 = 16;
-        worst_scores_right.deathchance = 0.0;
+//        worst_scores_right.score_1 = 1.0;
+//        worst_scores_right.score_2 = 16;
+//        worst_scores_right.deathchance = 0.0;
 
-        for(int i = 0 ; i < 4 ; i++) // iterate scorefield
-        {
-            for (int j = 0; j < 4 ; j++)
-            {
-                if (inputnode.fieldarr[i][j] == 0) // empty? fielddrop possible?
-                {
-                    // do for up
-                    // drop 2
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 1;
+//        for(int i = 0 ; i < 4 ; i++) // iterate scorefield
+//        {
+//            for (int j = 0; j < 4 ; j++)
+//            {
+//                if (inputnode.fieldarr[i][j] == 0) // empty? fielddrop possible?
+//                {
+//                    // do for up
+//                    // drop 2
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 1;
 
-                    if(move_up(passing_node))//move possible?
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].up_two.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].up_two.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].up_two.deathchance = scores_temp.deathchance;
-                        if(scores_temp.score_1 < worst_scores_up.score_1)
-                            worst_scores_up.score_1 = scores_temp.score_1;
-                        if(scores_temp.score_1 < worst_scores_up.score_2)
-                            worst_scores_up.score_1 = scores_temp.score_2;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].up_two.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].up_two.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].up_two.deathchance = 1.0;
-                    }
+//                    if(move_up(passing_node))//move possible?
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].up_two.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].up_two.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].up_two.deathchance = scores_temp.deathchance;
+//                        if(scores_temp.score_1 < worst_scores_up.score_1)
+//                            worst_scores_up.score_1 = scores_temp.score_1;
+//                        if(scores_temp.score_1 < worst_scores_up.score_2)
+//                            worst_scores_up.score_1 = scores_temp.score_2;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].up_two.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].up_two.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].up_two.deathchance = 1.0;
+//                    }
 
-                    //drop 4
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 2;
-                    if(move_up(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].up_four.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].up_four.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].up_four.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].up_four.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].up_four.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].up_four.deathchance = 1.0;
-                    }
-
-
-                    // do for down
-                    // drop 2
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 1;
-                    if(move_down(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].down_two.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].down_two.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].down_two.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].down_two.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].down_two.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].down_two.deathchance = 1.0;
-                    }
-
-                    //drop 4
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 2;
-                    if(move_down(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].down_four.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].down_four.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].down_four.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].down_four.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].down_four.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].down_four.deathchance = 1.0;
-                    }
+//                    //drop 4
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 2;
+//                    if(move_up(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].up_four.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].up_four.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].up_four.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].up_four.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].up_four.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].up_four.deathchance = 1.0;
+//                    }
 
 
-                    // do for left
-                    // drop 2
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 1;
-                    if(move_left(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].left_two.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].left_two.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].left_two.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].left_two.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].left_two.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].left_two.deathchance = 1.0;
-                    }
+//                    // do for down
+//                    // drop 2
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 1;
+//                    if(move_down(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].down_two.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].down_two.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].down_two.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].down_two.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].down_two.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].down_two.deathchance = 1.0;
+//                    }
 
-                    //drop 4
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 2;
-                    if(move_left(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].left_four.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].left_four.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].left_four.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].left_four.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].left_four.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].left_four.deathchance = 1.0;
-                    }
+//                    //drop 4
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 2;
+//                    if(move_down(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].down_four.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].down_four.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].down_four.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].down_four.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].down_four.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].down_four.deathchance = 1.0;
+//                    }
 
 
+//                    // do for left
+//                    // drop 2
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 1;
+//                    if(move_left(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].left_two.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].left_two.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].left_two.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].left_two.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].left_two.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].left_two.deathchance = 1.0;
+//                    }
 
-                    // do for right
-                    // drop 2
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 1;
-                    if(move_right(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].right_two.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].right_two.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].right_two.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].right_two.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].right_two.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].right_two.deathchance = 1.0;
-                    }
-
-                    //drop 4
-                    passing_node.copy_node(inputnode);
-                    passing_node.fieldarr[i][j] = 2;
-                    if(move_right(passing_node))
-                    {
-                        scores_temp = AIdata::check_score(passing_node, depth-1);
-                        my_scorefield.fieldarr[i][j].right_four.score_1 = scores_temp.score_1;
-                        my_scorefield.fieldarr[i][j].right_four.score_2 = scores_temp.score_2;
-                        my_scorefield.fieldarr[i][j].right_four.deathchance = scores_temp.deathchance;
-                    }
-                    else
-                    {
-                        my_scorefield.fieldarr[i][j].right_four.score_1 = -1.0;
-                        my_scorefield.fieldarr[i][j].right_four.score_2 = - 1;
-                        my_scorefield.fieldarr[i][j].right_four.deathchance = 1.0;
-                    }
-                }
-            }
-        }
-
-        for(int i = 0 ; i < 4 ; i++) //iterate through scores and decide on the best/worst etc.
-        {
-            for (int j = 0; j < 4 ; j++)
-            {
-                my_scorefield.fieldarr[i][j].up_two.score_1 = 0;
-                my_scorefield.fieldarr[i][j].up_two.score_2 = 0;
-                my_scorefield.fieldarr[i][j].up_two.deathchance = 0.0;
-                my_scorefield.fieldarr[i][j].up_four.score_1 = 0;
-                my_scorefield.fieldarr[i][j].up_four.score_2 = 0;
-                my_scorefield.fieldarr[i][j].up_four.deathchance = 0.0;
-
-                my_scorefield.fieldarr[i][j].right_two.score_1 = 0;
-                my_scorefield.fieldarr[i][j].right_two.score_2 = 0;
-                my_scorefield.fieldarr[i][j].right_two.deathchance = 0.0;
-                my_scorefield.fieldarr[i][j].right_four.score_1 = 0;
-                my_scorefield.fieldarr[i][j].right_four.score_2 = 0;
-                my_scorefield.fieldarr[i][j].right_four.deathchance = 0.0;
-
-                my_scorefield.fieldarr[i][j].down_two.score_1 = 0;
-                my_scorefield.fieldarr[i][j].down_two.score_2 = 0;
-                my_scorefield.fieldarr[i][j].down_two.deathchance = 0.0;
-                my_scorefield.fieldarr[i][j].down_four.score_1 = 0;
-                my_scorefield.fieldarr[i][j].down_four.score_2 = 0;
-                my_scorefield.fieldarr[i][j].down_four.deathchance = 0.0;
-
-                my_scorefield.fieldarr[i][j].left_two.score_1 = 0;
-                my_scorefield.fieldarr[i][j].left_two.score_2 = 0;
-                my_scorefield.fieldarr[i][j].left_two.deathchance = 0.0;
-                my_scorefield.fieldarr[i][j].left_four.score_1 = 0;
-                my_scorefield.fieldarr[i][j].left_four.score_2 = 0;
-                my_scorefield.fieldarr[i][j].left_four.deathchance = 0.0;
-            }
-        }
-    }
-    else //if no recursion needed calculate and return scores
-    {
-        scores.score_1 = AIdata::calc_score_1(inputnode);
-        scores.score_2 = AIdata::calc_score_2(inputnode);
-    }
-
-    return scores; */
-}
+//                    //drop 4
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 2;
+//                    if(move_left(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].left_four.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].left_four.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].left_four.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].left_four.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].left_four.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].left_four.deathchance = 1.0;
+//                    }
 
 
 
+//                    // do for right
+//                    // drop 2
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 1;
+//                    if(move_right(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].right_two.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].right_two.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].right_two.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].right_two.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].right_two.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].right_two.deathchance = 1.0;
+//                    }
 
-void AIdata::copy_to_stack(const Node& input_node, int stack_position)
-{
-    //this->Solverstack[stack_position].score = input_node.score;
-}
+//                    //drop 4
+//                    passing_node.copy_node(inputnode);
+//                    passing_node.fieldarr[i][j] = 2;
+//                    if(move_right(passing_node))
+//                    {
+//                        scores_temp = AIdata::check_score(passing_node, depth-1);
+//                        my_scorefield.fieldarr[i][j].right_four.score_1 = scores_temp.score_1;
+//                        my_scorefield.fieldarr[i][j].right_four.score_2 = scores_temp.score_2;
+//                        my_scorefield.fieldarr[i][j].right_four.deathchance = scores_temp.deathchance;
+//                    }
+//                    else
+//                    {
+//                        my_scorefield.fieldarr[i][j].right_four.score_1 = -1.0;
+//                        my_scorefield.fieldarr[i][j].right_four.score_2 = - 1;
+//                        my_scorefield.fieldarr[i][j].right_four.deathchance = 1.0;
+//                    }
+//                }
+//            }
+//        }
+
+//        for(int i = 0 ; i < 4 ; i++) //iterate through scores and decide on the best/worst etc.
+//        {
+//            for (int j = 0; j < 4 ; j++)
+//            {
+//                my_scorefield.fieldarr[i][j].up_two.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].up_two.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].up_two.deathchance = 0.0;
+//                my_scorefield.fieldarr[i][j].up_four.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].up_four.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].up_four.deathchance = 0.0;
+
+//                my_scorefield.fieldarr[i][j].right_two.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].right_two.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].right_two.deathchance = 0.0;
+//                my_scorefield.fieldarr[i][j].right_four.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].right_four.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].right_four.deathchance = 0.0;
+
+//                my_scorefield.fieldarr[i][j].down_two.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].down_two.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].down_two.deathchance = 0.0;
+//                my_scorefield.fieldarr[i][j].down_four.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].down_four.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].down_four.deathchance = 0.0;
+
+//                my_scorefield.fieldarr[i][j].left_two.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].left_two.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].left_two.deathchance = 0.0;
+//                my_scorefield.fieldarr[i][j].left_four.score_1 = 0;
+//                my_scorefield.fieldarr[i][j].left_four.score_2 = 0;
+//                my_scorefield.fieldarr[i][j].left_four.deathchance = 0.0;
+//            }
+//        }
+//    }
+//    else //if no recursion needed calculate and return scores
+//    {
+//        scores.score_1 = AIdata::calc_score_1(inputnode);
+//        scores.score_2 = AIdata::calc_score_2(inputnode);
+//    }
+
+//    return scores; */
+//}
+
+
+
+
+//void AIdata::copy_to_stack(const Node& input_node, int stack_position)
+//{
+//    //this->Solverstack[stack_position].score = input_node.score;
+//}
 
 bool AIdata::check_gameover(const Node &inputnode)
 {   //false -> move possible ; true -> gameover
@@ -953,8 +954,6 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
     Node whendown;
     Node whenleft;
 
-    ScoreNode ScoreCalc();//create scoring object
-
     int bestmovedirection = 0;
     double bestscore_1 = 0.0;
     double bestscore_2 = 0.0;
@@ -1016,8 +1015,6 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
 
 
-
-
     if(move_down(whendown))//down
     {
         temp_scores = AIdata::check_score(whendown, depth);
@@ -1036,8 +1033,6 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
             lowestdeathchance = temp_scores.deathchance;
         }
     }
-
-
 
 
 
@@ -1068,15 +1063,15 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
 void AIdata::copy_node(Node &inputnode, Node &outputnode)
 {
-    /*
-            outputnode.lvl = inputnode.lvl;
-            outputnode.child_id = inputnode.child_id;
-            outputnode.deathchance = inputnode.deathchance;
-            outputnode.parent_id = inputnode.parent_id;
-            outputnode.resolve_direction = inputnode.resolve_direction;
-            outputnode.score_1 = inputnode.score_1;
-            outputnode.score_2 = inputnode.score_2;
-            */
+
+//            outputnode.lvl = inputnode.lvl;
+//            outputnode.child_id = inputnode.child_id;
+//            outputnode.deathchance = inputnode.deathchance;
+//            outputnode.parent_id = inputnode.parent_id;
+//            outputnode.resolve_direction = inputnode.resolve_direction;
+//            outputnode.score_1 = inputnode.score_1;
+//            outputnode.score_2 = inputnode.score_2;
+
 
     for(int i = 0; i < 4 ; i++)
     {
