@@ -72,6 +72,7 @@ void ScoreNode::calc_scr_chain_slots()
 
 
 
+
     // --- postion of king slot ---
 
     //check colum
@@ -96,6 +97,7 @@ void ScoreNode::calc_scr_chain_slots()
 
     double line_mult = 1.0;
     double chain_counter = 0.0;
+    double weight_modifier = 1.0;
     bool endOfRow = false;
 
 
@@ -109,18 +111,19 @@ void ScoreNode::calc_scr_chain_slots()
         //do the row
         while(endOfRow == false)
         {
-            if(fieldarr[i][(j + direction_token)] > 2) //only slots higher than 4(2) really count
-            {
+
                 diff = (fieldarr[i][j] - fieldarr[i][(j + direction_token)]) * direction_token; //diff between current slot and neighbor
 
                 if(diff < 0)
                 {
                     // if difference not in line with the wanted zig-zag monotony
                     // then add the score step between the neighbors to the score and multiply it with a factor that depends on the current line (for lines closer to the bottom row monotony is more important)
-
-                    chain_counter = chain_counter + ((-diff) * line_mult);
+                    weight_modifier = fieldarr[i][j + direction_token];
+                    weight_modifier = weight_modifier*weight_modifier;
+                    weight_modifier = weight_modifier/(weight_modifier + 9.0);
+                    chain_counter = chain_counter + (-1)*((diff) * line_mult * weight_modifier);
                 }
-            }
+
 
             //increment up or down
             j = j + direction_token;
@@ -143,18 +146,22 @@ void ScoreNode::calc_scr_chain_slots()
 
         if(i > 0)//no transition if in top row
         {
-            if(fieldarr[i-1][j] > 2) //only slots higher than 4(2) really count
-            {
-                diff = (fieldarr[i][j] - fieldarr[i-1][j]); //diff between current slot and neighbor
+
+                diff = (fieldarr[i][j] - fieldarr[i-1][j]); //diff between current slot and neighbor above
 
                 if(diff < 0)
                 {
-                    chain_counter = chain_counter + ((-diff) * line_mult);
+                    // if difference not in line with the wanted zig-zag monotony
+                    // then add the score step between the neighbors to the score and multiply it with a factor that depends on the current line (for lines closer to the bottom row monotony is more important)
+                    weight_modifier = fieldarr[i-1][j];
+                    weight_modifier = weight_modifier*weight_modifier;
+                    weight_modifier = weight_modifier/(weight_modifier + 9.0);
+                    chain_counter = chain_counter + (-1)*((diff) * line_mult * weight_modifier);
                 }
-            }
+
         }
 
-        line_mult = line_mult * 0.9;
+        line_mult = line_mult * 0.8;
         direction_token = direction_token * (-1);//next row in other direction
         endOfRow = false;
         i--;

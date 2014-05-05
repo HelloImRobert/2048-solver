@@ -672,7 +672,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
     int bestmovedirection = 0;
     double bestscore_1 = 0.0;
     double bestscore_2 = 0.0;
-    double lowestdeathchance = 0.0;
+    double lowestdeathchance = 1.0;
 
     Scores_struct temp_scores;
     temp_scores.deathchance = 0.0;
