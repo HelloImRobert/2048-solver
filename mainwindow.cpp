@@ -61,6 +61,29 @@ QString MainWindow::getstring(int intvalue) //converts exponents of board values
 void MainWindow::on_btn_newgame_clicked() //start a new game
 {
     MainWindow::MainGame.reset_game();
+
+    //DEBUG
+    MainGame.game_field[0][0] = 0;
+    MainGame.game_field[0][1] = 0;
+    MainGame.game_field[0][2] = 0;
+    MainGame.game_field[0][3] = 0;
+
+    MainGame.game_field[1][0] = 2;
+    MainGame.game_field[1][1] = 3;
+    MainGame.game_field[1][2] = 0;
+    MainGame.game_field[1][3] = 0;
+
+    MainGame.game_field[2][0] = 1;
+    MainGame.game_field[2][1] = 2;
+    MainGame.game_field[2][2] = 3;
+    MainGame.game_field[2][3] = 4;
+
+    MainGame.game_field[3][0] = 4;
+    MainGame.game_field[3][1] = 7;
+    MainGame.game_field[3][2] = 5;
+    MainGame.game_field[3][3] = 4;
+
+
     ui->dspl_status->setText("have fun!");
     MainWindow::show_game();
 }
@@ -140,8 +163,8 @@ void MainWindow::ai_loop()
         if (depth < 0)
             depth = 0;
 
-        if (depth > 3)
-            depth = 3;
+        if (depth > 4)
+            depth = 4;
 
         MainWindow::exec_move(MainWindow::AIgame.think(MainGame.game_field, depth));
 
