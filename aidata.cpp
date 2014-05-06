@@ -343,15 +343,34 @@ bool AIdata::check_move(Node &inputnode, int direction)
 
 Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score checker
 {
+    //TODO:: BUG deathchance calculation ignores impossible move direcions
+
     Scores_struct scores;
     scores.score_1 = 0.0;
     scores.score_2 = 0;
     scores.deathchance = 0.0;
 
+    bool is_done [4][4][4];
+    int done_in_row = 0;
+
     Node passing_node(inputnode);
 
     // TODO:: how to choose on endgame?
     // TODO:: branching optimization
+
+    //is_done array
+
+    for(int i = 0 ; i < 4 ; i++) // init is_done k = direction
+    {
+        for (int j = 0; j < 4 ; j++)
+        {
+            for (int k = 0; k < 4 ; k++)
+            {
+                is_done[i][j][k] = false;
+            }
+        }
+    }
+
 
     if(depth > 0)// further recursion needed?
     {
@@ -383,23 +402,35 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
             {
                 if (inputnode.fieldarr[i][j] == 0) // empty? fielddrop possible?
                 {
+                    // --- drop 2 ---
+
                     move_done = false;
 
                     // do for up
-                    // drop 2
                     passing_node.copy_node(inputnode);
                     passing_node.fieldarr[i][j] = 1;
 
-                    if(move_up(passing_node))//move possible?
+                    if((move_up(passing_node))&&(is_done[i][j][0] == false))//move possible?
                     {
+                        //do stuff for this slot
                         move_done = true;
                         scores_temp = AIdata::check_score(passing_node, depth-1);
                         if(scores_temp.score_1 < worst_scores_up.score_1) //now check if this has the worst score of all
                             worst_scores_up.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_up.score_2)
                             worst_scores_up.score_2 = scores_temp.score_2;
+
+                        is_done[i][j][0] = true;
+
+                        worst_scores_up.deathchance = worst_scores_up.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
                     }
-                    worst_scores_up.deathchance = worst_scores_up.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
+
+                    //extrapolate on the other slots where the result will be the same
+                    if(is_done[i][j][0] == true)
+                    {
+
+                    }
+
 
 
                     //down
@@ -414,8 +445,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_down.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_down.score_2)
                             worst_scores_down.score_2 = scores_temp.score_2;
+
+                        worst_scores_down.deathchance = worst_scores_down.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
                     }
-                    worst_scores_down.deathchance = worst_scores_down.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
+
 
 
                     //left
@@ -430,8 +463,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_left.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_left.score_2)
                             worst_scores_left.score_2 = scores_temp.score_2;
+
+                        worst_scores_left.deathchance = worst_scores_left.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
                     }
-                    worst_scores_left.deathchance = worst_scores_left.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
+
 
 
                     //right
@@ -446,8 +481,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_right.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_right.score_2)
                             worst_scores_right.score_2 = scores_temp.score_2;
+
+                        worst_scores_right.deathchance = worst_scores_right.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
                     }
-                    worst_scores_right.deathchance = worst_scores_right.deathchance + (0.666666 * scores_temp.deathchance / empty_slots); //aggregate combined deathchance
+
 
                     //check for gameover (no move was possible => full deathchance for this possible drop)
                     if (move_done == false)
@@ -459,9 +496,14 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                     }
 
 
+
+
+
+                    // --- drop 4 ---
+
                     move_done = false;
 
-                    //drop 4
+
                     //up
                     passing_node.copy_node(inputnode);
                     passing_node.fieldarr[i][j] = 2;
@@ -474,8 +516,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_up.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_up.score_2)
                             worst_scores_up.score_2 = scores_temp.score_2;
+
+                        worst_scores_up.deathchance = worst_scores_up.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
                     }
-                    worst_scores_up.deathchance = worst_scores_up.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
+
 
 
                     // down
@@ -489,8 +533,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_down.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_down.score_2)
                             worst_scores_down.score_2 = scores_temp.score_2;
+
+                        worst_scores_down.deathchance = worst_scores_down.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
                     }
-                    worst_scores_down.deathchance = worst_scores_down.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
+
 
 
                     //  left
@@ -504,8 +550,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_left.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_left.score_2)
                             worst_scores_left.score_2 = scores_temp.score_2;
+
+                        worst_scores_left.deathchance = worst_scores_left.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
                     }
-                    worst_scores_left.deathchance = worst_scores_left.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
+
 
 
                     //right
@@ -519,8 +567,10 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
                             worst_scores_right.score_1 = scores_temp.score_1;
                         if(scores_temp.score_2 < worst_scores_right.score_2)
                             worst_scores_right.score_2 = scores_temp.score_2;
+
+                        worst_scores_right.deathchance = worst_scores_right.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
                     }
-                    worst_scores_right.deathchance = worst_scores_right.deathchance + (0.333334 * scores_temp.deathchance / empty_slots);
+
 
                     //check for gameover
                     if (move_done == false)
@@ -661,7 +711,6 @@ int AIdata::check_empty (const Node &inputnode)
 
 int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 {
-    // TODO:: BUG: AI makes illegal moven when every move ultimatively ends in certain (calculated) death
 
     Node startvalues; //create Nodes to pass along and init with starting values
     Node whenup;
@@ -712,8 +761,8 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
     {
         temp_scores = AIdata::check_score(whenright, depth);
 
-        //take this direction if deathchances are equal and score_2 is better or if deathchance is lower
-        if (((temp_scores.score_2 > bestscore_2) && (temp_scores.deathchance <= lowestdeathchance))||(temp_scores.deathchance < lowestdeathchance))
+        //take this direction if deathchances is (equal or not worse than 2%) and score_2 is better or if deathchance is lower
+        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.02)))||(temp_scores.deathchance < lowestdeathchance))
         {
             bestmovedirection = 1;
             bestscore_2 = temp_scores.score_2;
@@ -734,7 +783,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
     {
         temp_scores = AIdata::check_score(whendown, depth);
 
-        if (((temp_scores.score_2 > bestscore_2) && (temp_scores.deathchance <= lowestdeathchance))||(temp_scores.deathchance < lowestdeathchance))
+        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.02)))||(temp_scores.deathchance < lowestdeathchance))
         {
             bestmovedirection = 2;
             bestscore_2 = temp_scores.score_2;
@@ -755,7 +804,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
     {
         temp_scores = AIdata::check_score(whenleft, depth);
 
-        if (((temp_scores.score_2 > bestscore_2) && (temp_scores.deathchance <= lowestdeathchance))||(temp_scores.deathchance < lowestdeathchance))
+        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.02)))||(temp_scores.deathchance < lowestdeathchance))
         {
             bestmovedirection = 3;
             bestscore_2 = temp_scores.score_2;
