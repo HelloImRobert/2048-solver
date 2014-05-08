@@ -1,55 +1,270 @@
 #include "aidata.h"
 
 
-Scorefield::Scorefield(Node &inputnode)
+Scorefield::Scorefield()
 {
+
     this->fieldarr.resize(4);
-    this->fieldarr[0].resize(4);
-    this->fieldarr[1].resize(4);
-    this->fieldarr[2].resize(4);
-    this->fieldarr[3].resize(4);
-
-    this->free_slots = 0;
-
     for (int i = 0; i < 4; i++)
     {
+        this->fieldarr[i].resize(4);
         for (int j = 0; j < 4; j++)
         {
-            this->fieldarr[i][j].value = inputnode.fieldarr[i][j];
+            this->fieldarr[i][j].resize(2);
+            for (int n = 0 ; n < 2 ; n++)
+            {
+                this->fieldarr[i][j][n].resize(4);
+                for(int k = 0; k < 4; k++)
+                {
+                    this->fieldarr[i][j][n][k].score_1 = 0.0;
+                    this->fieldarr[i][j][n][k].score_2 = 0.0;
+                    this->fieldarr[i][j][n][k].deathchance = 0.0;
+                    this->fieldarr[i][j][n][k].isDone = false;
+                }//for
+            }//for
+        }//for
+    }//for
+}
 
-            if (inputnode.fieldarr[i][j] == 0) //count empty slots
-                this->free_slots++;
 
-            this->fieldarr[i][j].up_two.score_1 = 0;
-            this->fieldarr[i][j].up_two.score_2 = 0;
-            this->fieldarr[i][j].up_two.deathchance = 0.0;
-            this->fieldarr[i][j].up_four.score_1 = 0;
-            this->fieldarr[i][j].up_four.score_2 = 0;
-            this->fieldarr[i][j].up_four.deathchance = 0.0;
 
-            this->fieldarr[i][j].right_two.score_1 = 0;
-            this->fieldarr[i][j].right_two.score_2 = 0;
-            this->fieldarr[i][j].right_two.deathchance = 0.0;
-            this->fieldarr[i][j].right_four.score_1 = 0;
-            this->fieldarr[i][j].right_four.score_2 = 0;
-            this->fieldarr[i][j].right_four.deathchance = 0.0;
+void Scorefield::finalize(Node &inputnode)// go through all scores and calculate deathchances and alternative scores if move wasn't possible
+{
+    for(int i = 0; i < 4 ; i++)
+    {
+        for(int j = 0; j < 4 ; j++)
+        {
+            if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
+            {
+                for(int n = 0; n < 2 ; n++) //for each possible drop
+                {
 
-            this->fieldarr[i][j].down_two.score_1 = 0;
-            this->fieldarr[i][j].down_two.score_2 = 0;
-            this->fieldarr[i][j].down_two.deathchance = 0.0;
-            this->fieldarr[i][j].down_four.score_1 = 0;
-            this->fieldarr[i][j].down_four.score_2 = 0;
-            this->fieldarr[i][j].down_four.deathchance = 0.0;
+                    if (are_all_neg(i,j,n)) //if no move was possible then death
+                    {
+                        this->fieldarr[i][j][n][0].deathchance = 1.0;
+                        this->fieldarr[i][j][n][1].deathchance = 1.0;
+                        this->fieldarr[i][j][n][2].deathchance = 1.0;
+                        this->fieldarr[i][j][n][3].deathchance = 1.0;
+                    }
+                    else
+                    {
+                        for(int k = 0; k < 4; k++)
+                        {
 
-            this->fieldarr[i][j].left_two.score_1 = 0;
-            this->fieldarr[i][j].left_two.score_2 = 0;
-            this->fieldarr[i][j].left_two.deathchance = 0.0;
-            this->fieldarr[i][j].left_four.score_1 = 0;
-            this->fieldarr[i][j].left_four.score_2 = 0;
-            this->fieldarr[i][j].left_four.deathchance = 0.0;
+                            if( this->fieldarr[i][j][n][k].score_1 < 0)//..but move in this direction (with this drop) possible
+                            {
+                                //find best alternative scores + deathchances
+
+                                this->fieldarr[i][j][n][k].score_1 = get_best_score(i,j,n,1);
+                                this->fieldarr[i][j][n][k].score_2 = get_best_score(i,j,n,2);
+                                this->fieldarr[i][j][n][k].deathchance = get_best_score(i,j,n,3);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+
+
+double Scorefield::get_best_score(int i, int j , int n, int type) //get best score of demanded type and dropvalue of all directions for current slot
+{
+    double best_score;
+
+    if(type == 1)//score 1
+    {
+        best_score = 0.0;
+        for(int k = 0; k < 4; k++)
+        {
+            if(this->fieldarr[i][j][n][k].score_1 > best_score)
+            {
+                best_score = this->fieldarr[i][j][n][k].score_1;
+            }
+        }
+    }
+    else if(type == 2)//score 2
+    {
+        best_score = 0.0;
+        for(int k = 0; k < 4; k++)
+        {
+            if(this->fieldarr[i][j][n][k].score_2 > best_score)
+            {
+                best_score = this->fieldarr[i][j][n][k].score_2;
+            }
+        }
+    }
+    else if(type == 3)//deathchance
+    {
+        best_score = 1.0;// !!deathchance lower is better
+        for(int k = 0; k < 4; k++)
+        {
+            if((this->fieldarr[i][j][n][k].deathchance < best_score) && (this->fieldarr[i][j][n][k].deathchance >= 0))
+            {
+                best_score = this->fieldarr[i][j][n][k].deathchance;
+            }
+        }
+    }
+
+    return best_score;
+}
+
+
+
+bool Scorefield::are_all_neg(int i, int j, int n)
+{
+    for(int k = 0; k < 4 ; k++) //checks if any score at this slot is valid (move possible)
+    {
+        if(this->fieldarr[i][j][n][k].score_1 >= 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+
+double Scorefield::get_worst_score(int direction, int type, Node &inputnode) //returns the worst-case score of demanded type for the given direction
+{
+    double worst_score;
+
+    if (type == 2)
+    {
+        worst_score = 16.0;
+
+        for(int i = 0; i < 4 ; i++)
+        {
+            for(int j = 0; j < 4 ; j++)
+            {
+                if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
+                {
+                    for(int n = 0; n < 2 ; n++) //for each possible drop
+                    {
+                        if(this->fieldarr[i][j][n][direction].score_2 < worst_score)
+                           worst_score = this->fieldarr[i][j][n][direction].score_2;
+                    }
+                }
+            }
+        }
+    }
+    else if (type == 1)
+    {
+        worst_score = 1.0;
+
+        for(int i = 0; i < 4 ; i++)
+        {
+            for(int j = 0; j < 4 ; j++)
+            {
+                if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
+                {
+                    for(int n = 0; n < 2 ; n++) //for each possible drop
+                    {
+                        if(this->fieldarr[i][j][n][direction].score_1 < worst_score)
+                           worst_score = this->fieldarr[i][j][n][direction].score_1;
+                    }
+                }
+            }
+        }
+    }
+
+    return worst_score;
+}
+
+
+
+double Scorefield::get_deathchance( Node &inputnode )
+{
+    double deathchance = 0.0;
+    int empty_slots = 0;
+
+    for(int i = 0; i < 4 ; i++) //count empty slots
+    {
+        for(int j = 0; j < 4 ; j++)
+        {
+            if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
+            {
+                empty_slots++;
+            }
+        }
+    }
+
+    for(int i = 0; i < 4 ; i++) //sum up deathchance. always take best possible direction for each slot (lowest deathchance) and multiply with probability of occurrence.
+    {
+        for(int j = 0; j < 4 ; j++)
+        {
+            if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
+            {
+                deathchance += ( 0.666666 * this->get_best_score(i,j,0,3) / ((double)empty_slots) );//for 2s
+                deathchance += ( 0.333333 * this->get_best_score(i,j,1,3) / ((double)empty_slots) );//for 4s
+            }
+        }
+    }
+
+    return deathchance;
+}
+
+
+
+Scores_struct Scorefield::get_final_scores(Node &inputnode)
+{
+    Scores_struct best_scores;
+    double temp_score;
+
+
+    //TODO: check if this logic of best worst scores really makes sense!!
+
+    //coose the best of the worst case scores
+    best_scores.score_1 = Scorefield::get_worst_score(0, 1, inputnode);//up
+    best_scores.score_2 = Scorefield::get_worst_score(0, 2, inputnode);//
+
+
+
+    temp_score = Scorefield::get_worst_score(1, 1, inputnode);//right
+
+    if (temp_score > best_scores.score_1)
+        best_scores.score_1 = temp_score;
+
+    temp_score = Scorefield::get_worst_score(1, 2, inputnode);//
+
+    if (temp_score > best_scores.score_2)
+        best_scores.score_2 = temp_score;
+
+
+
+    temp_score = Scorefield::get_worst_score(2, 1, inputnode);//down
+
+    if (temp_score > best_scores.score_1)
+        best_scores.score_1 = temp_score;
+
+    temp_score = Scorefield::get_worst_score(2, 2, inputnode);//
+
+    if (temp_score > best_scores.score_2)
+        best_scores.score_2 = temp_score;
+
+
+
+    temp_score = Scorefield::get_worst_score(3, 1, inputnode);//left
+
+    if (temp_score > best_scores.score_1)
+        best_scores.score_1 = temp_score;
+
+    temp_score = Scorefield::get_worst_score(3, 2, inputnode);//
+
+    if (temp_score > best_scores.score_2)
+        best_scores.score_2 = temp_score;
+
+
+
+    //calc deathchance
+    best_scores.deathchance = this->get_deathchance(inputnode);
+
+    return best_scores;
+}
+
+
 
 AIdata::AIdata()
 {
@@ -80,6 +295,7 @@ AIdata::AIdata()
     }
     */
 }
+
 
 
 bool AIdata::move_up(Node &inputnode)
@@ -126,6 +342,8 @@ bool AIdata::move_up(Node &inputnode)
     }
     return returnval;
 }
+
+
 
 bool AIdata::move_down(Node &inputnode)
 {
@@ -180,6 +398,8 @@ bool AIdata::move_down(Node &inputnode)
     return returnval;
 }
 
+
+
 bool AIdata::move_left(Node &inputnode)
 {
     int floor;
@@ -225,6 +445,8 @@ bool AIdata::move_left(Node &inputnode)
     return returnval;
 }
 
+
+
 bool AIdata::move_right(Node &inputnode)
 {
     int floor;
@@ -268,6 +490,8 @@ bool AIdata::move_right(Node &inputnode)
     }
     return returnval;
 }
+
+
 
 bool AIdata::check_move(Node &inputnode, int direction)
 {   // check if legal move in desired direction possible
@@ -341,13 +565,14 @@ bool AIdata::check_move(Node &inputnode, int direction)
 }
 
 
+
 Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score checker
 {
     //TODO:: BUG deathchance calculation ignores impossible move direcions
 
     Scores_struct scores;
     scores.score_1 = 0.0;
-    scores.score_2 = 0;
+    scores.score_2 = 0.0;
     scores.deathchance = 0.0;
 
     bool is_done [4][4][4];
@@ -630,11 +855,450 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
     return scores;
 }
 
+
+
 Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive score checker
 {
 
-}
+    //TODO: implement scorefield evaluation
+    //TODO: deathchances are still all wrong ?
 
+    Scorefield myScorefield;
+    Scores_struct scores;
+    Node passing_node;
+    Scores_struct scores_temp;
+
+
+    scores.score_1 = 0.0;
+    scores.score_2 = 0.0;
+    scores.deathchance = 0.0;
+    scores.isDone = false;
+
+
+
+    if (depth > 0)
+    {
+        //do recursion
+
+        //right + down
+        for(int i = 0; i < 4 ; i++)
+        {
+            for(int j = 0; j < 4; j++)
+            {
+                if(inputnode.fieldarr[i][j] == 0) //empty slot ?
+                {
+
+                    myScorefield.fieldarr[i][j][0][1].isDone = true;
+                    myScorefield.fieldarr[i][j][0][2].isDone = true;
+                    myScorefield.fieldarr[i][j][1][1].isDone = true;
+                    myScorefield.fieldarr[i][j][1][2].isDone = true;
+
+
+                    //right
+                    //check if scores can be copied over
+                    // has a valid score been calculated above me?
+                    if((j > 0) && ( myScorefield.fieldarr[i][j-1][0][1].isDone == true ) && ( myScorefield.fieldarr[i][j-1][0][1].score_1 >= 0.0 ))
+                    {
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 1 ) )
+                        {
+                            myScorefield.fieldarr[i][j][0][1].score_1 = myScorefield.fieldarr[i][j-1][0][1].score_1;
+                            myScorefield.fieldarr[i][j][0][1].score_2 = myScorefield.fieldarr[i][j-1][0][1].score_2;
+                            myScorefield.fieldarr[i][j][0][1].deathchance = myScorefield.fieldarr[i][j-1][0][1].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][1].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][1].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][1].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 1 ) )
+                        {
+                            myScorefield.fieldarr[i][j][1][1].score_1 = myScorefield.fieldarr[i][j-1][1][1].score_1;
+                            myScorefield.fieldarr[i][j][1][1].score_2 = myScorefield.fieldarr[i][j-1][1][1].score_2;
+                            myScorefield.fieldarr[i][j][1][1].deathchance = myScorefield.fieldarr[i][j-1][1][1].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][1].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][1].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][1].deathchance = -1.0;
+                        }
+                    }
+                    else
+                    {
+                        //evaluate score the normal way
+
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( move_right( passing_node ) )
+                        {
+
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][0][1].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][0][1].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][0][1].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][1].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][1].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][1].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( move_right( passing_node ) )
+                        {
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][1][1].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][1][1].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][1][1].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][1].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][1].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][1].deathchance = -1.0;
+                        }
+                    }//for else (right)
+
+
+                    //copy check, down
+
+                    //down
+                    //check if scores can be copied over
+                    // has a valid score been calculated above me?
+                    if((i > 0)&&( myScorefield.fieldarr[i-1][j][0][2].isDone == true ) && ( myScorefield.fieldarr[i-1][j][0][2].score_1 >= 0.0 ))
+                    {
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 2 ) )
+                        {
+                            myScorefield.fieldarr[i][j][0][2].score_1 = myScorefield.fieldarr[i-1][j][0][2].score_1;
+                            myScorefield.fieldarr[i][j][0][2].score_2 = myScorefield.fieldarr[i-1][j][0][2].score_2;
+                            myScorefield.fieldarr[i][j][0][2].deathchance = myScorefield.fieldarr[i-1][j][0][2].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][2].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][2].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][2].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 2 ) )
+                        {
+                            myScorefield.fieldarr[i][j][1][2].score_1 = myScorefield.fieldarr[i-1][j][1][2].score_1;
+                            myScorefield.fieldarr[i][j][1][2].score_2 = myScorefield.fieldarr[i-1][j][1][2].score_2;
+                            myScorefield.fieldarr[i][j][1][2].deathchance = myScorefield.fieldarr[i-1][j][1][2].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][2].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][2].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][2].deathchance = -1.0;
+                        }
+                    }
+                    else
+                    {
+                        //evaluate score the normal way
+
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( move_down( passing_node) )
+                        {
+
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][0][2].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][0][2].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][0][2].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][2].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][2].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][2].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( move_down( passing_node ) )
+                        {
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][1][2].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][1][2].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][1][2].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][2].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][2].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][2].deathchance = -1.0;
+                        }
+                    }//for else (down)
+
+                }
+                else //not empty slot (this has only to be done in this one pass)
+                {
+                    for(int k = 0; k < 4 ; k++) //mark all scores as invalid
+                    {
+                        myScorefield.fieldarr[i][j][0][k].isDone = true;
+                        myScorefield.fieldarr[i][j][0][k].score_1 = -1.0;
+                        myScorefield.fieldarr[i][j][0][k].score_2 = -1.0;
+                        myScorefield.fieldarr[i][j][0][k].deathchance = -1.0;
+
+                        myScorefield.fieldarr[i][j][1][k].isDone = true;
+                        myScorefield.fieldarr[i][j][1][k].score_1 = -1.0;
+                        myScorefield.fieldarr[i][j][1][k].score_2 = -1.0;
+                        myScorefield.fieldarr[i][j][1][k].deathchance = -1.0;
+                    }
+                }
+            }
+        }
+
+
+        // left and up
+        for(int i = 3; i >= 0 ; i--)
+        {
+            for(int j = 3; j >= 0; j--)
+            {
+                if(inputnode.fieldarr[i][j] == 0)
+                {
+
+                    myScorefield.fieldarr[i][j][0][0].isDone = true;
+                    myScorefield.fieldarr[i][j][0][3].isDone = true;
+                    myScorefield.fieldarr[i][j][1][0].isDone = true;
+                    myScorefield.fieldarr[i][j][1][3].isDone = true;
+
+                    //left
+                    //check if scores can be copied over
+                    // has a valid score been calculated above me?
+                    if((j < 3) && ( myScorefield.fieldarr[i][j+1][0][3].isDone == true ) && ( myScorefield.fieldarr[i][j+1][0][3].score_1 >= 0.0 ))
+                    {
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 1 ) )
+                        {
+                            myScorefield.fieldarr[i][j][0][3].score_1 = myScorefield.fieldarr[i][j+1][0][3].score_1;
+                            myScorefield.fieldarr[i][j][0][3].score_2 = myScorefield.fieldarr[i][j+1][0][3].score_2;
+                            myScorefield.fieldarr[i][j][0][3].deathchance = myScorefield.fieldarr[i][j+1][0][3].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][3].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][3].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][3].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 1 ) )
+                        {
+                            myScorefield.fieldarr[i][j][1][3].score_1 = myScorefield.fieldarr[i][j+1][1][3].score_1;
+                            myScorefield.fieldarr[i][j][1][3].score_2 = myScorefield.fieldarr[i][j+1][1][3].score_2;
+                            myScorefield.fieldarr[i][j][1][3].deathchance = myScorefield.fieldarr[i][j+1][1][3].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][3].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][3].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][3].deathchance = -1.0;
+                        }
+                    }
+                    else
+                    {
+                        //evaluate score the normal way
+
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( move_left( passing_node ) )
+                        {
+
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][0][3].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][0][3].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][0][3].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][3].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][3].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][3].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( move_left( passing_node ) )
+                        {
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][1][3].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][1][3].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][1][3].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][3].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][3].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][3].deathchance = -1.0;
+                        }
+                    }//for else (left)
+
+
+                    //copy check, up
+
+                    //up
+                    //check if scores can be copied over
+                    // has a valid score been calculated above me?
+                    if((i < 3) && ( myScorefield.fieldarr[i+1][j][0][0].isDone == true ) && ( myScorefield.fieldarr[i+1][j][0][0].score_1 >= 0.0 ))
+                    {
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 2 ) )
+                        {
+                            myScorefield.fieldarr[i][j][0][0].score_1 = myScorefield.fieldarr[i+1][j][0][0].score_1;
+                            myScorefield.fieldarr[i][j][0][0].score_2 = myScorefield.fieldarr[i+1][j][0][0].score_2;
+                            myScorefield.fieldarr[i][j][0][0].deathchance = myScorefield.fieldarr[i+1][j][0][0].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][0].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][0].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][0].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( check_move( passing_node, 2 ) )
+                        {
+                            myScorefield.fieldarr[i][j][1][0].score_1 = myScorefield.fieldarr[i+1][j][1][0].score_1;
+                            myScorefield.fieldarr[i][j][1][0].score_2 = myScorefield.fieldarr[i+1][j][1][0].score_2;
+                            myScorefield.fieldarr[i][j][1][0].deathchance = myScorefield.fieldarr[i+1][j][1][0].deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][0].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][0].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][0].deathchance = -1.0;
+                        }
+                    }
+                    else
+                    {
+                        //evaluate score the normal way
+
+                        //drop 2 (exp = 1)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 1;
+
+                        //move possible with this drop?
+                        if( move_up( passing_node ) )
+                        {
+
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][0][0].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][0][0].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][0][0].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][0][0].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][0][0].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][0][0].deathchance = -1.0;
+                        }
+
+                        //drop 4 (exp = 2)
+                        this->copy_node(inputnode, passing_node);
+                        passing_node.fieldarr[i][j] = 2;
+
+                        //move possible with this drop?
+                        if( move_up( passing_node ) )
+                        {
+                            scores_temp = this->check_score_deep(passing_node, depth-1);
+
+                            myScorefield.fieldarr[i][j][1][0].score_1 = scores_temp.score_1;
+                            myScorefield.fieldarr[i][j][1][0].score_2 = scores_temp.score_2;
+                            myScorefield.fieldarr[i][j][1][0].deathchance = scores_temp.deathchance;
+                        }
+                        else//move not possible with this drop
+                        {
+                            myScorefield.fieldarr[i][j][1][0].score_1 = -1.0;
+                            myScorefield.fieldarr[i][j][1][0].score_2 = -1.0;
+                            myScorefield.fieldarr[i][j][1][0].deathchance = -1.0;
+                        }
+                    }//for else (up)
+                }
+            }
+        }
+
+
+
+        myScorefield.finalize(inputnode);
+
+        //TODO: calculate scores and deathchances from scorefield
+
+        scores = myScorefield.get_final_scores(inputnode);
+    }
+    else
+    {
+        //check scores
+        AIdata::ScoreCalc.get_scores(inputnode);
+        scores.score_1 = inputnode.score_1;
+        scores.score_2 = inputnode.score_2;
+        scores.deathchance = 0.0;
+    }
+
+    return scores;
+}
 
 
 
@@ -642,6 +1306,8 @@ void AIdata::copy_to_stack(const Node& input_node, int stack_position)
 {
     //    //this->Solverstack[stack_position].score = input_node.score;
 }
+
+
 
 bool AIdata::check_gameover(const Node &inputnode)
 {   //false -> move possible ; true -> gameover
@@ -694,6 +1360,8 @@ bool AIdata::check_gameover(const Node &inputnode)
     return returnval;
 }
 
+
+
 int AIdata::check_empty (const Node &inputnode)
 {
     int returnval = 0;
@@ -708,6 +1376,8 @@ int AIdata::check_empty (const Node &inputnode)
 
     return returnval;
 }
+
+
 
 int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 {

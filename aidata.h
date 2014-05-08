@@ -20,30 +20,35 @@ typedef struct
     double score_1;
     double score_2;
     double deathchance;
+    bool isDone;
 }Scores_struct;
 
 
-typedef struct
-{
-    int value;
-    Scores_struct up_two;
-    Scores_struct up_four;
-    Scores_struct right_two;
-    Scores_struct right_four;
-    Scores_struct down_two;
-    Scores_struct down_four;
-    Scores_struct left_two;
-    Scores_struct left_four;
-}Scorefieldvalues_struct;
 
 
 // Scorefield container class
 class Scorefield
 {
 public:
-    Scorefield(Node &inputnode);
-    std::vector<std::vector<Scorefieldvalues_struct> > fieldarr;
-    int free_slots;
+    Scorefield();
+
+    void finalize(Node &inputnode);
+
+    Scores_struct get_final_scores(Node &inputnode);
+
+    // i, j, dropvalue, direction, <scores>
+    std::vector< std::vector< std::vector< std::vector< Scores_struct > > > > fieldarr;
+
+private:
+
+    bool are_all_neg(int i, int j, int n);
+
+    double get_best_score(int i, int j , int n, int type);
+
+    double get_worst_score(int direction, int type, Node &inputnode);
+
+    double get_deathchance(Node &inputnode);
+
 };
 
 
@@ -70,6 +75,7 @@ private:
 
     Scores_struct check_score(Node inputnode, int depth);
 
+    // (recursive) score checker. inputnode = current state of the scorefield, depth = how deep should he look, branches = how many of the worst possible outcomes should he check (0 = all)
     Scores_struct check_score_deep(Node inputnode, int depth);
 
     int calc_score_1(const Node &inputnode);
@@ -94,6 +100,8 @@ private:
     bool move_up(Node &inputnode);
 
     bool move_down(Node &inputnode);
+
+    void finalize_Scorefield (Scorefield &myScorefield);
 
 };
 
