@@ -170,7 +170,7 @@ void MainWindow::ai_loop()
         MainWindow::exec_move(MainWindow::AIgame.think(MainGame.game_field, depth));
 
         qApp->processEvents();
-        Sleep(333);
+     //   Sleep(250);
         if (continue_thinking == false)
             break;
     }

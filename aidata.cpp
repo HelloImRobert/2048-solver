@@ -30,7 +30,7 @@ Scorefield::Scorefield()
 
 double Scorefield::get_best_score(int i, int j , int n, int type) //get best score of demanded type and dropvalue of all directions for current slot
 {
-    double best_score;
+    double best_score = -1.0;
 
     if(type == 0)//score 1
     {

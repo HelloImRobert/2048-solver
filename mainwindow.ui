@@ -933,6 +933,9 @@
       <height>22</height>
      </rect>
     </property>
+    <property name="value">
+     <number>3</number>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
