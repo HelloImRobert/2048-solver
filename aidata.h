@@ -24,6 +24,16 @@ typedef struct
 }Scores_struct;
 
 
+typedef struct
+{
+    double value;
+    int pos_i;
+    int pos_j;
+    int dropval;
+    bool is_used;
+} Worst_Scores_struct;
+
+
 
 
 // Scorefield container class
@@ -32,22 +42,26 @@ class Scorefield
 public:
     Scorefield();
 
-    void finalize(Node &inputnode);
-
-    Scores_struct get_final_scores(Node &inputnode);
+    void calc_final_scores(Node &inputnode, int how_many);
 
     // i, j, dropvalue, direction, <scores>
     std::vector< std::vector< std::vector< std::vector< Scores_struct > > > > fieldarr;
 
+    Worst_Scores_struct worst_scores [4][2]; //[worst, 2nd, 3rd worst...] [type]
+
+    double deathchance;
+
 private:
+
+    bool is_redundant (int i, int j, int n, int scoretype, int score_it);
 
     bool are_all_neg(int i, int j, int n);
 
     double get_best_score(int i, int j , int n, int type);
 
-    double get_worst_score(int direction, int type, Node &inputnode);
+    void calc_worst_scores(Node &inputnode , int how_many);
 
-    double get_deathchance(Node &inputnode);
+    double get_deathchance( Node &inputnode );
 
 };
 
@@ -81,8 +95,6 @@ private:
     int calc_score_1(const Node &inputnode);
 
     double calc_score_2(const Node &inputnode);
-
-    void copy_to_stack(const Node &, int);
 
     bool check_move(Node &inputnode, int direction);
 

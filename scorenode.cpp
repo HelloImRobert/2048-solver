@@ -87,7 +87,7 @@ void ScoreNode::calc_scr_chain_slots()
 
     //check row
     if (king_slot_pos_i != 3)
-        king_slot_scr = king_slot_scr * (0.01/(3.0 - king_slot_pos_i)); //never ever leave the bottom row (if you can't be sure to get back)
+        king_slot_scr = king_slot_scr * (0.001/(3.0 - king_slot_pos_i)); //never ever leave the bottom row (if you can't be sure to get back)
 
 
 
@@ -241,5 +241,5 @@ void ScoreNode::calc_score_2(Node &inputnode)//score heuristic of scoretype 2: m
 
     score2 = scr_chain_slots;
 
-    inputnode.score_2 = score1 * score2;
+    inputnode.score_2 = ((score1 * 0.9) + 0.1) * score2;
 }

@@ -28,52 +28,11 @@ Scorefield::Scorefield()
 
 
 
-void Scorefield::finalize(Node &inputnode)// go through all scores and calculate deathchances and alternative scores if move wasn't possible
-{
-    for(int i = 0; i < 4 ; i++)
-    {
-        for(int j = 0; j < 4 ; j++)
-        {
-            if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
-            {
-                for(int n = 0; n < 2 ; n++) //for each possible drop
-                {
-
-                    if (are_all_neg(i,j,n)) //if no move was possible then death
-                    {
-                        this->fieldarr[i][j][n][0].deathchance = 1.0;
-                        this->fieldarr[i][j][n][1].deathchance = 1.0;
-                        this->fieldarr[i][j][n][2].deathchance = 1.0;
-                        this->fieldarr[i][j][n][3].deathchance = 1.0;
-                    }
-                    else
-                    {
-                        for(int k = 0; k < 4; k++)
-                        {
-
-                            if( this->fieldarr[i][j][n][k].score_1 < 0)//..but move in this direction (with this drop) possible
-                            {
-                                //find best alternative scores + deathchances
-
-                                this->fieldarr[i][j][n][k].score_1 = get_best_score(i,j,n,1);
-                                this->fieldarr[i][j][n][k].score_2 = get_best_score(i,j,n,2);
-                                this->fieldarr[i][j][n][k].deathchance = get_best_score(i,j,n,3);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-
 double Scorefield::get_best_score(int i, int j , int n, int type) //get best score of demanded type and dropvalue of all directions for current slot
 {
     double best_score;
 
-    if(type == 1)//score 1
+    if(type == 0)//score 1
     {
         best_score = 0.0;
         for(int k = 0; k < 4; k++)
@@ -84,7 +43,7 @@ double Scorefield::get_best_score(int i, int j , int n, int type) //get best sco
             }
         }
     }
-    else if(type == 2)//score 2
+    else if(type == 1)//score 2
     {
         best_score = 0.0;
         for(int k = 0; k < 4; k++)
@@ -95,7 +54,7 @@ double Scorefield::get_best_score(int i, int j , int n, int type) //get best sco
             }
         }
     }
-    else if(type == 3)//deathchance
+    else if(type == 2)//deathchance
     {
         best_score = 1.0;// !!deathchance lower is better
         for(int k = 0; k < 4; k++)
@@ -127,53 +86,85 @@ bool Scorefield::are_all_neg(int i, int j, int n)
 
 
 
-double Scorefield::get_worst_score(int direction, int type, Node &inputnode) //returns the worst-case score of demanded type for the given direction
+void Scorefield::calc_worst_scores( Node &inputnode, int how_many ) //calculates the worst-case drops
 {
-    double worst_score;
+    double temp_best_score;
 
-    if (type == 2)
+    if(how_many > 4) //plausibility
+        how_many = 4;
+    else if (how_many < 1)
+        how_many = 1;
+
+    for(int i = 0; i < 4 ; i++) //init worst scores
     {
-        worst_score = 16.0;
+        for(int j = 0; j < 2 ; j++)
+        {
+            // init with best possible values
+            this->worst_scores[i][j].value = 1000.0;
+            this->worst_scores[i][j].is_used = false;
+        }
+    }
 
-        for(int i = 0; i < 4 ; i++)
+
+    for(int score_it = 0; score_it <= how_many; score_it++)
+    {
+        for(int i = 0; i < 4 ; i++)//for each empty slot
         {
             for(int j = 0; j < 4 ; j++)
             {
-                if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
+                if( inputnode.fieldarr[i][j] == 0 )//...slot was empty...
                 {
-                    for(int n = 0; n < 2 ; n++) //for each possible drop
+                    for(int n = 0 ; n < 2 ; n++)//for each dropvalue
                     {
-                        if(this->fieldarr[i][j][n][direction].score_2 < worst_score)
-                           worst_score = this->fieldarr[i][j][n][direction].score_2;
+                        for(int scoretype = 0; scoretype < 2 ; scoretype++) //for each scoretype
+                        {
+                            temp_best_score = this->get_best_score(i, j, n, scoretype); //get best score at this slot
+
+                            if(worst_scores[score_it][scoretype].value > temp_best_score) //if worse
+                            {
+                                if(Scorefield::is_redundant(i, j, n, scoretype, score_it) == false)//not the same as another
+                                {
+                                    worst_scores[score_it][scoretype].value = temp_best_score;
+                                    worst_scores[score_it][scoretype].dropval = n+1;
+                                    worst_scores[score_it][scoretype].pos_i = i;
+                                    worst_scores[score_it][scoretype].pos_j = j;
+                                    worst_scores[score_it][scoretype].is_used = true;
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
-    else if (type == 1)
-    {
-        worst_score = 1.0;
 
-        for(int i = 0; i < 4 ; i++)
-        {
-            for(int j = 0; j < 4 ; j++)
-            {
-                if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
-                {
-                    for(int n = 0; n < 2 ; n++) //for each possible drop
-                    {
-                        if(this->fieldarr[i][j][n][direction].score_1 < worst_score)
-                           worst_score = this->fieldarr[i][j][n][direction].score_1;
-                    }
-                }
-            }
-        }
-    }
-
-    return worst_score;
 }
 
+bool Scorefield::is_redundant(int i, int j, int n, int scoretype, int score_it) //has the same worst score been found before?
+{
+    if(score_it == 0)
+        return false;
 
+    for(int x = 0; x < score_it ; x++)
+    {
+        if(this->worst_scores[x][scoretype].is_used == true)
+        {
+            if(this->worst_scores[x][scoretype].dropval == n+1)
+            {
+                if(this->worst_scores[x][scoretype].pos_j == j)
+                {
+                    if(this->worst_scores[x][scoretype].pos_i == i)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+    }
+
+    return false;
+}
 
 double Scorefield::get_deathchance( Node &inputnode )
 {
@@ -191,14 +182,28 @@ double Scorefield::get_deathchance( Node &inputnode )
         }
     }
 
-    for(int i = 0; i < 4 ; i++) //sum up deathchance. always take best possible direction for each slot (lowest deathchance) and multiply with probability of occurrence.
+    for(int i = 0; i < 4 ; i++)
     {
         for(int j = 0; j < 4 ; j++)
         {
             if( inputnode.fieldarr[i][j] == 0 )//slot was empty...
             {
-                deathchance += ( 0.666666 * this->get_best_score(i,j,0,3) / ((double)empty_slots) );//for 2s
-                deathchance += ( 0.333333 * this->get_best_score(i,j,1,3) / ((double)empty_slots) );//for 4s
+                for(int n = 0; n < 2 ; n++) //for each possible drop
+                {
+
+                    if (are_all_neg(i,j,n)) //if no move was possible then full deathchance
+                    {
+                        this->fieldarr[i][j][n][0].deathchance = 1.0;
+                        this->fieldarr[i][j][n][1].deathchance = 1.0;
+                        this->fieldarr[i][j][n][2].deathchance = 1.0;
+                        this->fieldarr[i][j][n][3].deathchance = 1.0;
+                    }
+                }
+
+                //sum up deathchance. always take best possible direction for each slot (lowest deathchance) and multiply with probability of occurrence.
+                deathchance += ( 0.666666 * this->get_best_score(i,j,0,2) / ((double)empty_slots) );//for 2s
+                deathchance += ( 0.333333 * this->get_best_score(i,j,1,2) / ((double)empty_slots) );//for 4s
+
             }
         }
     }
@@ -208,60 +213,15 @@ double Scorefield::get_deathchance( Node &inputnode )
 
 
 
-Scores_struct Scorefield::get_final_scores(Node &inputnode)
+void Scorefield::calc_final_scores(Node &inputnode, int how_many)
 {
-    Scores_struct best_scores;
-    double temp_score;
 
-
-    //TODO: check if this logic of best worst scores really makes sense!!
-
-    //coose the best of the worst case scores
-    best_scores.score_1 = Scorefield::get_worst_score(0, 1, inputnode);//up
-    best_scores.score_2 = Scorefield::get_worst_score(0, 2, inputnode);//
-
-
-
-    temp_score = Scorefield::get_worst_score(1, 1, inputnode);//right
-
-    if (temp_score > best_scores.score_1)
-        best_scores.score_1 = temp_score;
-
-    temp_score = Scorefield::get_worst_score(1, 2, inputnode);//
-
-    if (temp_score > best_scores.score_2)
-        best_scores.score_2 = temp_score;
-
-
-
-    temp_score = Scorefield::get_worst_score(2, 1, inputnode);//down
-
-    if (temp_score > best_scores.score_1)
-        best_scores.score_1 = temp_score;
-
-    temp_score = Scorefield::get_worst_score(2, 2, inputnode);//
-
-    if (temp_score > best_scores.score_2)
-        best_scores.score_2 = temp_score;
-
-
-
-    temp_score = Scorefield::get_worst_score(3, 1, inputnode);//left
-
-    if (temp_score > best_scores.score_1)
-        best_scores.score_1 = temp_score;
-
-    temp_score = Scorefield::get_worst_score(3, 2, inputnode);//
-
-    if (temp_score > best_scores.score_2)
-        best_scores.score_2 = temp_score;
-
-
+    //choose the best of the worst case scores
+    this->calc_worst_scores(inputnode, how_many);
 
     //calc deathchance
-    best_scores.deathchance = this->get_deathchance(inputnode);
+    this->deathchance = this->get_deathchance(inputnode);
 
-    return best_scores;
 }
 
 
@@ -576,7 +536,6 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
     scores.deathchance = 0.0;
 
     bool is_done [4][4][4];
-    int done_in_row = 0;
 
     Node passing_node(inputnode);
 
@@ -1281,12 +1240,13 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
         }
 
 
+        // calculate scores and deathchances from scorefield
 
-        myScorefield.finalize(inputnode);
+        myScorefield.calc_final_scores(inputnode, 1);
 
-        //TODO: calculate scores and deathchances from scorefield
-
-        scores = myScorefield.get_final_scores(inputnode);
+        scores.score_1 = myScorefield.worst_scores[0][0].value;
+        scores.score_2 = myScorefield.worst_scores[0][1].value;
+        scores.deathchance = myScorefield.deathchance;
     }
     else
     {
@@ -1299,14 +1259,6 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
 
     return scores;
 }
-
-
-
-void AIdata::copy_to_stack(const Node& input_node, int stack_position)
-{
-    //    //this->Solverstack[stack_position].score = input_node.score;
-}
-
 
 
 bool AIdata::check_gameover(const Node &inputnode)
@@ -1417,7 +1369,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
     if(move_up(whenup))//up
     {
-        temp_scores = AIdata::check_score(whenup, depth);
+        temp_scores = AIdata::check_score_deep(whenup, depth);
 
         bestmovedirection = 0;
         bestscore_1 = temp_scores.score_1;
@@ -1429,64 +1381,64 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
     if(move_right(whenright))//right
     {
-        temp_scores = AIdata::check_score(whenright, depth);
+        temp_scores = AIdata::check_score_deep(whenright, depth);
 
         //take this direction if deathchances is (equal or not worse than 2%) and score_2 is better or if deathchance is lower
-        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.02)))||(temp_scores.deathchance < lowestdeathchance))
+        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.01)))||(temp_scores.deathchance < lowestdeathchance))
         {
             bestmovedirection = 1;
             bestscore_2 = temp_scores.score_2;
             bestscore_1 = temp_scores.score_1;
             lowestdeathchance = temp_scores.deathchance;
         }
-        else if ((temp_scores.score_2 >= bestscore_2) && (temp_scores.deathchance <= lowestdeathchance) && (temp_scores.score_1 > bestscore_1)) //if all things are equal differenciate through score_1
-        {
-            bestmovedirection = 1;
-            bestscore_1 = temp_scores.score_1;
-            lowestdeathchance = temp_scores.deathchance;
-        }
+//        else if ((temp_scores.score_2 >= bestscore_2) && (temp_scores.deathchance <= lowestdeathchance) && (temp_scores.score_1 > bestscore_1)) //if all things are equal differenciate through score_1
+//        {
+//            bestmovedirection = 1;
+//            bestscore_1 = temp_scores.score_1;
+//            lowestdeathchance = temp_scores.deathchance;
+//        }
     }
 
 
 
     if(move_down(whendown))//down
     {
-        temp_scores = AIdata::check_score(whendown, depth);
+        temp_scores = AIdata::check_score_deep(whendown, depth);
 
-        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.02)))||(temp_scores.deathchance < lowestdeathchance))
+        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.01)))||(temp_scores.deathchance < lowestdeathchance))
         {
             bestmovedirection = 2;
             bestscore_2 = temp_scores.score_2;
             bestscore_1 = temp_scores.score_1;
             lowestdeathchance = temp_scores.deathchance;
         }
-        else if ((temp_scores.score_2 >= bestscore_2) && (temp_scores.deathchance <= lowestdeathchance) && (temp_scores.score_1 > bestscore_1))
-        {
-            bestmovedirection = 2;
-            bestscore_1 = temp_scores.score_1;
-            lowestdeathchance = temp_scores.deathchance;
-        }
+//        else if ((temp_scores.score_2 >= bestscore_2) && (temp_scores.deathchance <= lowestdeathchance) && (temp_scores.score_1 > bestscore_1))
+//        {
+//            bestmovedirection = 2;
+//            bestscore_1 = temp_scores.score_1;
+//            lowestdeathchance = temp_scores.deathchance;
+//        }
     }
 
 
 
     if(move_left(whenleft))//left
     {
-        temp_scores = AIdata::check_score(whenleft, depth);
+        temp_scores = AIdata::check_score_deep(whenleft, depth);
 
-        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.02)))||(temp_scores.deathchance < lowestdeathchance))
+        if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.01)))||(temp_scores.deathchance < lowestdeathchance))
         {
             bestmovedirection = 3;
             bestscore_2 = temp_scores.score_2;
             bestscore_1 = temp_scores.score_1;
             lowestdeathchance = temp_scores.deathchance;
         }
-        else if ((temp_scores.score_2 >= bestscore_2) && (temp_scores.deathchance <= lowestdeathchance) && (temp_scores.score_1 > bestscore_1))
-        {
-            bestmovedirection = 3;
-            bestscore_1 = temp_scores.score_1;
-            lowestdeathchance = temp_scores.deathchance;
-        }
+//        else if ((temp_scores.score_2 >= bestscore_2) && (temp_scores.deathchance <= lowestdeathchance) && (temp_scores.score_1 > bestscore_1))
+//        {
+//            bestmovedirection = 3;
+//            bestscore_1 = temp_scores.score_1;
+//            lowestdeathchance = temp_scores.deathchance;
+//        }
     }
 
     return bestmovedirection;
