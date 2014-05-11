@@ -816,16 +816,14 @@ Scores_struct AIdata::check_score (Node inputnode, int depth) //recursive score 
 
 
 
-Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive score checker
+Scores_struct AIdata::check_score_deep (Node inputnode, int depth, int depth2) //recursive score checker
 {
-
-    //TODO: implement scorefield evaluation
-    //TODO: deathchances are still all wrong ?
 
     Scorefield myScorefield;
     Scores_struct scores;
     Node passing_node;
     Scores_struct scores_temp;
+    int depth_save;
 
 
     scores.score_1 = 0.0;
@@ -833,6 +831,9 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
     scores.deathchance = 0.0;
     scores.isDone = false;
 
+
+    if(depth2 > 0) //save depth
+        depth_save = depth;
 
 
     if (depth > 0)
@@ -905,7 +906,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         if( move_right( passing_node ) )
                         {
 
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][0][1].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][0][1].score_2 = scores_temp.score_2;
@@ -925,7 +926,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         //move possible with this drop?
                         if( move_right( passing_node ) )
                         {
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][1][1].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][1][1].score_2 = scores_temp.score_2;
@@ -994,7 +995,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         if( move_down( passing_node) )
                         {
 
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][0][2].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][0][2].score_2 = scores_temp.score_2;
@@ -1014,7 +1015,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         //move possible with this drop?
                         if( move_down( passing_node ) )
                         {
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][1][2].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][1][2].score_2 = scores_temp.score_2;
@@ -1113,7 +1114,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         if( move_left( passing_node ) )
                         {
 
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][0][3].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][0][3].score_2 = scores_temp.score_2;
@@ -1133,7 +1134,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         //move possible with this drop?
                         if( move_left( passing_node ) )
                         {
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][1][3].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][1][3].score_2 = scores_temp.score_2;
@@ -1202,7 +1203,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         if( move_up( passing_node ) )
                         {
 
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][0][0].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][0][0].score_2 = scores_temp.score_2;
@@ -1222,7 +1223,7 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
                         //move possible with this drop?
                         if( move_up( passing_node ) )
                         {
-                            scores_temp = this->check_score_deep(passing_node, depth-1);
+                            scores_temp = this->check_score_deep(passing_node, depth-1, 0);
 
                             myScorefield.fieldarr[i][j][1][0].score_1 = scores_temp.score_1;
                             myScorefield.fieldarr[i][j][1][0].score_2 = scores_temp.score_2;
@@ -1242,11 +1243,29 @@ Scores_struct AIdata::check_score_deep (Node inputnode, int depth) //recursive s
 
         // calculate scores and deathchances from scorefield
 
-        myScorefield.calc_final_scores(inputnode, 1);
 
+
+
+        if(depth2 <= 0)//normal run?
+        {
+        myScorefield.calc_final_scores(inputnode, 1);
         scores.score_1 = myScorefield.worst_scores[0][0].value;
         scores.score_2 = myScorefield.worst_scores[0][1].value;
         scores.deathchance = myScorefield.deathchance;
+        }
+        else//deep run
+        {
+         myScorefield.calc_final_scores(inputnode, 2);
+
+         //TODO: init scores to worst possible values
+         //TODO: worst scores also save direction of best move
+
+         for(int i = 0 ; i < 2 ; i++)
+         {
+             //TODO: start yourself
+         }
+
+        }
     }
     else
     {
@@ -1334,6 +1353,8 @@ int AIdata::check_empty (const Node &inputnode)
 int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 {
 
+    int depth2 = 0;
+
     Node startvalues; //create Nodes to pass along and init with starting values
     Node whenup;
     Node whenright;
@@ -1369,7 +1390,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
     if(move_up(whenup))//up
     {
-        temp_scores = AIdata::check_score_deep(whenup, depth);
+        temp_scores = AIdata::check_score_deep(whenup, depth, depth2);
 
         bestmovedirection = 0;
         bestscore_1 = temp_scores.score_1;
@@ -1381,7 +1402,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
     if(move_right(whenright))//right
     {
-        temp_scores = AIdata::check_score_deep(whenright, depth);
+        temp_scores = AIdata::check_score_deep(whenright, depth, depth2);
 
         //take this direction if deathchances is (equal or not worse than 2%) and score_2 is better or if deathchance is lower
         if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.01)))||(temp_scores.deathchance < lowestdeathchance))
@@ -1403,7 +1424,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
     if(move_down(whendown))//down
     {
-        temp_scores = AIdata::check_score_deep(whendown, depth);
+        temp_scores = AIdata::check_score_deep(whendown, depth, depth2);
 
         if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.01)))||(temp_scores.deathchance < lowestdeathchance))
         {
@@ -1424,7 +1445,7 @@ int AIdata::think(std::vector< std::vector<int> > &gamefield, int depth)
 
     if(move_left(whenleft))//left
     {
-        temp_scores = AIdata::check_score_deep(whenleft, depth);
+        temp_scores = AIdata::check_score_deep(whenleft, depth, depth2);
 
         if (((temp_scores.score_2 > bestscore_2) && ((temp_scores.deathchance <= lowestdeathchance)||(temp_scores.deathchance <= 0.01)))||(temp_scores.deathchance < lowestdeathchance))
         {

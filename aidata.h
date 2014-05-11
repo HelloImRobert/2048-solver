@@ -90,7 +90,7 @@ private:
     Scores_struct check_score(Node inputnode, int depth);
 
     // (recursive) score checker. inputnode = current state of the scorefield, depth = how deep should he look, branches = how many of the worst possible outcomes should he check (0 = all)
-    Scores_struct check_score_deep(Node inputnode, int depth);
+    Scores_struct check_score_deep(Node inputnode, int depth, int depth2);
 
     int calc_score_1(const Node &inputnode);
 

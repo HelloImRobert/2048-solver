@@ -25,6 +25,8 @@ void ScoreNode::get_scores(Node &inputnode)
     //calc all partial scores
     ScoreNode::calc_scr_free_slots();
     ScoreNode::calc_scr_chain_slots();
+    ScoreNode::calc_scr_king_slot_scr();
+    ScoreNode::calc_scr_monotony();
 
     // get scores
     ScoreNode::calc_score_1(inputnode);
@@ -41,175 +43,114 @@ void ScoreNode::calc_scr_free_slots()
 }
 
 
-//MONOTONY SCORE
-void ScoreNode::calc_scr_chain_slots()
+//KING SLOT POSITION
+void ScoreNode::calc_scr_king_slot_scr()
 {
-    //this score has two parts: 1st the position of the so called king slot (the field with the highest value)
-    //2nd the monotony of decrease of the field values starting at the king slot and covering the field in a zig-zag motion to the very top
-
-    //partial scores
-    double king_slot_scr = 1.0;
-    double scr_chain = 1.0;
-    double scr_monotony = 1.0;
-
-    //additional variables
     double diff;
-    int direction_token;
-    double temp_scr;
-    double temp_var;
 
-
-
+    this->scr_king_slot_scr = 1.0;
 
     // --- postion of king slot ---
 
     //check colum
     //colum score = 1/(1+ dist-to-ideal-pos)
     if (king_slot_pos_j != 0)
-        king_slot_scr = pow(0.3, (double)king_slot_pos_j);
+        this->scr_king_slot_scr = pow(0.3, (double)king_slot_pos_j);
 
     if (king_slot_pos_j >= 1 ) //now adjust the score depending on the diff between king slot and its neighbor
     {
         diff = fieldarr[king_slot_pos_i][king_slot_pos_j] - fieldarr[king_slot_pos_i][king_slot_pos_j - 1];
-        king_slot_scr = king_slot_scr + (1 - king_slot_scr)*(1/(2*diff*diff)); //eg. if diff between king and neighbor only 1 then there's only half the penalty
+        this->scr_king_slot_scr = this->scr_king_slot_scr + (1 - this->scr_king_slot_scr)*(1/(2*diff*diff)); //eg. if diff between king and neighbor only 1 then there's only half the penalty
     }
 
     //check row
     if (king_slot_pos_i != 3)
-        king_slot_scr = king_slot_scr * (0.00001/(3.0 - king_slot_pos_i)); //never ever leave the bottom row (if you can't be sure to get back)
+        this->scr_king_slot_scr = this->scr_king_slot_scr * (0.00001/(3.0 - king_slot_pos_i)); //never ever leave the bottom row (if you can't be sure to get back)
 
 
+}
 
-    // --- monotony ---
+//MONOTONY SCORE
+void ScoreNode::calc_scr_monotony()
+{
+    this->scr_monotony = 1.0; //fail silent
+    double temp1;
+    double temp2;
+    double rowcounter1;
+    double rowcounter2;
+    int direction = 0;
+    int best_direction = 0;
 
-    //vertical
-    double row_counter = 0.0;
-    direction_token = 1;
 
-    for(int j = 0 ; j < 4; j++)
+    //main monotony in one direction
+    rowcounter1 = 1000000000.0;
+
+    for(direction = 0; direction < 4 ; direction++)
     {
-        for(int i = 0; i < 3; i++)
-        {
-            diff = fieldarr[i + 1][j] - fieldarr[i][j];
+        temp1 = 0.0;
 
-            if(diff < 0) //has monotony been broken?
-            {
-                row_counter = row_counter + (-1)*diff;
-            }
+        for(int i = 0; i < 4; i++)
+        {
+            temp1 += get_rowcounter(i, direction);
+        }
+
+        if(temp1 < rowcounter1)
+        {
+            rowcounter1 = temp1;
+            best_direction = direction;
         }
     }
 
-    //calc score
-    scr_monotony = row_counter;
 
+    //get monotony for each row/colum
+    //choose the lower score when checking for both directions
+    //if mein direction up or down check monotony left-right but now each row/colum individually
 
-    row_counter = 0.0;
-    direction_token = 1;
+    rowcounter2 = 0.0;
 
-    for(int j = 3 ; j >= 0; j--)
+    if ((best_direction == 1) || (best_direction == 3))
     {
-        for(int i = 3; i >= 1; i--)
+        for(int i = 0; i < 4; i++)
         {
-            diff = fieldarr[i - 1][j] - fieldarr[i][j];
+            //up-down
+            temp1 = get_rowcounter(i, 0);
+            temp2 = get_rowcounter(i, 2);
+            if ( temp1 < temp2)
+                rowcounter2 += temp1;
+            else
+                rowcounter2 += temp2;
 
-            if(diff < 0) //has monotony been broken?
-            {
-                row_counter = row_counter + (-1)*diff;
-            }
+        }
+    }
+    else if ((best_direction == 0) || (best_direction == 2))
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            //left right
+            temp1 = get_rowcounter(i, 1);
+            temp2 = get_rowcounter(i, 3);
+            if ( temp1 < temp2)
+                rowcounter2 += temp1;
+            else
+                rowcounter2 += temp2;
         }
     }
 
-    //calc score
-    temp_scr = row_counter;
 
-    if(temp_scr < scr_monotony)
-        scr_monotony = temp_scr;
+    //calc partial scores
+    temp1 = pow(0.9, (double)rowcounter1);
+    temp2 = pow(0.999, (double)rowcounter2);
 
+    //ouput
+    this->scr_monotony = temp1 * temp2;
+}
 
-    //horizontal
-    row_counter = 0.0;
-    direction_token = 1;
+void ScoreNode::calc_scr_chain_slots()
+{
 
-    for(int i = 0 ; i < 4; i++)
-    {
-        for(int j = 0; j < 3; j++)
-        {
-            diff = fieldarr[i][j + 1] - fieldarr[i][j];
-
-            if(diff < 0) //has monotony been broken?
-            {
-                row_counter = row_counter + (-1)*diff;
-            }
-        }
-    }
-
-    //calc score
-    temp_scr = row_counter;
-
-    if(temp_scr < scr_monotony)
-        scr_monotony = temp_scr;
-
-
-    row_counter = 0.0;
-    direction_token = 1;
-
-    for(int i = 3 ; i >= 0; i--)
-    {
-        for(int j = 3; j >= 1; j--)
-        {
-            diff = fieldarr[i][j - 1] - fieldarr[i][j];
-
-            if(diff < 0) //has monotony been broken?
-            {
-                row_counter = row_counter + (-1)*diff;
-            }
-        }
-    }
-
-    //calc score
-    temp_scr = row_counter;
-
-    if(temp_scr < scr_monotony)
-        scr_monotony = temp_scr;
-
-    scr_monotony = pow(0.9, (double)scr_monotony);
-
-
-
-
-
-//    //horizontal
-//    row_counter = 0.0;
-//    direction_token = 1;
-
-//    for(int i = 0 ; i < 4; i++)
-//    {
-
-//        diff = fieldarr[i][1] - fieldarr[i][0];
-
-//        if(diff < 0)
-//        {
-//            direction_token = - 1; //init direction
-//        }
-
-//        for(int j = 1; j < 3; j++)
-//        {
-//            diff = fieldarr[i][j + 1] - fieldarr[i][j];
-
-//            if((diff * direction_token) < 0) //has monotony been broken?
-//            {
-//                row_counter = row_counter + (-1)*diff;
-//                direction_token = (-1) * direction_token;
-//            }
-//        }
-//    }
-
-//    //calc score
-//    temp_scr = pow(0.9, (double)row_counter);
-
-//    if(temp_scr > scr_monotony)
-//        scr_monotony = temp_scr;
-
+    //additional variables
+    double diff;
+    int direction_token;
 
 
 
@@ -234,18 +175,18 @@ void ScoreNode::calc_scr_chain_slots()
         while(endOfRow == false)
         {
 
-                diff = (fieldarr[i][j] - fieldarr[i][(j + direction_token)]) * direction_token; //diff between current slot and neighbor
+            diff = (fieldarr[i][j] - fieldarr[i][(j + direction_token)]) * direction_token; //diff between current slot and neighbor
 
-                if(diff < 0)
-                {
-                    // if difference not in line with the wanted zig-zag monotony
-                    // then add the score step between the neighbors to the score and multiply it with a factor that depends on the current line (for lines closer to the bottom row monotony is more important)
-                    weight_modifier = fieldarr[i][j + direction_token];
-                    weight_modifier = weight_modifier*weight_modifier;
-                    weight_modifier = weight_modifier/(weight_modifier + 9.0);
-                    chain_counter = chain_counter + (-1)*((diff) * line_mult * weight_modifier);
-//                      chain_counter = chain_counter + ((diff)*(diff) * line_mult);
-                }
+            if(diff < 0)
+            {
+                // if difference not in line with the wanted zig-zag monotony
+                // then add the score step between the neighbors to the score and multiply it with a factor that depends on the current line (for lines closer to the bottom row monotony is more important)
+                weight_modifier = fieldarr[i][j + direction_token];
+                weight_modifier = weight_modifier*weight_modifier;
+                weight_modifier = weight_modifier/(weight_modifier + 9.0);
+                chain_counter = chain_counter + (-1)*((diff) * line_mult * weight_modifier);
+                //                      chain_counter = chain_counter + ((diff)*(diff) * line_mult);
+            }
 
 
             //increment up or down
@@ -270,19 +211,19 @@ void ScoreNode::calc_scr_chain_slots()
         if(i > 0)//no transition if in top row
         {
 
-                diff = (fieldarr[i][j] - fieldarr[i-1][j]); //diff between current slot and neighbor above
+            diff = (fieldarr[i][j] - fieldarr[i-1][j]); //diff between current slot and neighbor above
 
-                if(diff < 0)
-                {
-                    // if difference not in line with the wanted zig-zag monotony
-                    // then add the score step between the neighbors to the score and multiply it with a factor that depends on the current line (for lines closer to the bottom row monotony is more important)
-                    weight_modifier = fieldarr[i-1][j];
-                    weight_modifier = weight_modifier*weight_modifier;
-                    weight_modifier = weight_modifier/(weight_modifier + 9.0);
-                    chain_counter = chain_counter + (-1)*((diff) * line_mult * weight_modifier);
+            if(diff < 0)
+            {
+                // if difference not in line with the wanted zig-zag monotony
+                // then add the score step between the neighbors to the score and multiply it with a factor that depends on the current line (for lines closer to the bottom row monotony is more important)
+                weight_modifier = fieldarr[i-1][j];
+                weight_modifier = weight_modifier*weight_modifier;
+                weight_modifier = weight_modifier/(weight_modifier + 9.0);
+                chain_counter = chain_counter + (-1)*((diff) * line_mult * weight_modifier);
 
-//                    chain_counter = chain_counter + ((diff)*(diff) * line_mult);
-                }
+                //                    chain_counter = chain_counter + ((diff)*(diff) * line_mult);
+            }
 
         }
 
@@ -293,13 +234,74 @@ void ScoreNode::calc_scr_chain_slots()
     }
 
     //calc the score form the chain_counter
-    scr_chain = pow(0.99, chain_counter);
+    this->scr_chain_slots = pow( 0.9, (double)chain_counter );
 
-
-
-    //output
-    this->scr_chain_slots = (king_slot_scr * 0.0 + 1.0)  * (scr_monotony * 1.0 + 0.0)  * (scr_chain * 0.0 + 1.0);
 }
+
+//HELPER
+// calc row/colum monotony rowcounter
+double ScoreNode::get_rowcounter(int index, int direction)
+{
+
+    double diff;
+    double row_counter = 0.0;
+
+
+    // --- monotony ---
+
+    if(direction == 0) //monotonously decreasing scores to the top...
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            diff = fieldarr[i + 1][index] - fieldarr[i][index];
+
+            if(diff < 0) //has monotony been broken?
+            {
+                row_counter = row_counter + (-1)*diff;
+            }
+        }
+    }
+    else if(direction == 2)//...bottom
+    {
+        for(int i = 3; i >= 1; i--)
+        {
+            diff = fieldarr[i - 1][index] - fieldarr[i][index];
+
+            if(diff < 0) //has monotony been broken?
+            {
+                row_counter = row_counter + (-1)*diff;
+            }
+        }
+    }
+    else if(direction == 1)//...right
+    {
+        //horizontal
+        for(int j = 0; j < 3; j++)
+        {
+            diff = fieldarr[index][j + 1] - fieldarr[index][j];
+
+            if(diff < 0) //has monotony been broken?
+            {
+                row_counter = row_counter + (-1)*diff;
+            }
+        }
+    }
+    else if(direction == 3)//...left
+    {
+        for(int j = 3; j >= 1; j--)
+        {
+            diff = fieldarr[index][j - 1] - fieldarr[index][j];
+
+            if(diff < 0) //has monotony been broken?
+            {
+                row_counter = row_counter + (-1)*diff;
+            }
+        }
+    }
+
+    return row_counter;
+}
+
 
 // HELPER
 // calc amount of free(= 0) slots
@@ -343,28 +345,12 @@ void ScoreNode::calc_king_slot()
 
 void ScoreNode::calc_score_1(Node &inputnode) // second version score heuristic of scoretype 1: # of free slots in the gamefield - the more the better
 {
-    int returnval = 0;
 
-    for(int i = 0 ; i < 4 ; i++)
-    {
-        for(int j = 0 ; j < 4 ; j++)
-        {
-            if(inputnode.fieldarr[i][j] == 0)
-                returnval++;
-        }
-    }
-
-    inputnode.score_1 = returnval;
+    inputnode.score_1 = scr_free_slots;
 }
 
 void ScoreNode::calc_score_2(Node &inputnode)//score heuristic of scoretype 2: mainly monotony of the gamefield
 {
-    double score1;
-    double score2;
 
-    score1 = scr_free_slots;
-
-    score2 = scr_chain_slots;
-
-    inputnode.score_2 = score1 * score2;
+    inputnode.score_2 = scr_free_slots * scr_monotony;
 }
