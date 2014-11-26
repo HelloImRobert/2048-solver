@@ -1,0 +1,3 @@
+add_subdirectory(SWE_TemplateFilter)
+add_subdirectory(SWE_LaneDetection)
+add_subdirectory(SWE_TrackControl)
